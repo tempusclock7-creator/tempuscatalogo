@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tempus Clock — Catálogo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#0b0b0b;
+      --card:#0f0f0f;
+      --gold:#c59b2c;
+      --muted:#9b9b9b;
+      --glass: rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    header{padding:22px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.03)}
+    .brand{display:flex;gap:14px;align-items:center}
+    .logo{width:56px;height:56px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#e6c96a);display:flex;align-items:center;justify-content:center;color:#0b0b0b;font-weight:800;font-size:18px}
+    h1{margin:0;font-size:20px;letter-spacing:0.6px}
+    nav{display:flex;gap:12px}
+    nav button{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:10px 14px;border-radius:8px;cursor:pointer}
+    nav button.active{border-color:var(--gold);color:var(--gold);}
+    .controls{display:flex;gap:12px;align-items:center}
+    .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+    .btn.primary{background:linear-gradient(90deg,var(--gold),#e6c96a);color:#0b0b0b;border:none}
+    main{padding:24px}
+    .section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .section-title h2{margin:0;font-size:18px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:10px}
+    .thumb{height:170px;border-radius:10px;background:var(--glass);display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .thumb img{max-width:100%;max-height:100%;object-fit:contain}
+    .meta{display:flex;flex-direction:column;gap:6px}
+    .name{font-weight:600;font-size:15px}
+    .price{font-weight:800;color:var(--gold);font-size:16px}
+    .muted{color:var(--muted);font-size:13px}
+    .actions{display:flex;gap:8px;align-items:center}
+    [contenteditable]{outline:2px dashed transparent;padding:2px 4px;border-radius:6px}
+    .editing [contenteditable]{outline-color: rgba(197,155,44,0.45);background:rgba(255,255,255,0.01)}
+    footer{padding:18px 24px;border-top:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">TC</div>
+      <div>
+        <h1>Tempus Clock — Catálogo</h1>
+        <div class="muted">Negro & Dorado · Editable · Guarda localmente</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center">
+      <nav>
+        <button data-section="men" class="active">Hombres</button>
+        <button data-section="women">Mujer</button>
+        <button data-section="sports">Deportivos</button>
+      </nav>
+      <div class="controls">
+        <button id="toggleEdit" class="btn">Modo editar</button>
+        <button id="saveAll" class="btn primary">Guardar</button>
+        <button id="exportBtn" class="btn">Exportar JSON</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="section-men" class="catalog-section">
+      <div class="section-title"><h2>Relojes de Hombre</h2><div class="muted">15 modelos</div></div>
+      <div id="grid-men" class="grid"></div>
+    </section>
+
+    <section id="section-women" class="catalog-section" style="display:none;margin-top:28px">
+      <div class="section-title"><h2>Relojes de Mujer</h2><div class="muted">15 modelos</div></div>
+      <div id="grid-women" class="grid"></div>
+    </section>
+
+    <section id="section-sports" class="catalog-section" style="display:none;margin-top:28px">
+      <div class="section-title"><h2>Relojes Deportivos</h2><div class="muted">15 modelos</div></div>
+      <div id="grid-sports" class="grid"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div>Tempus Clock · Catálogo editable</div>
+    <div class="muted">Activa <strong>Modo editar</strong> para cambiar nombres y precios. Se guardará en tu navegador.</div>
+  </footer>
+
+  <script>
+    const storageKey = 'tempus_catalog_v2';
+    const grids = {
+      men:document.getElementById('grid-men'),
+      women:document.getElementById('grid-women'),
+      sports:document.getElementById('grid-sports')
+    };
+
+    const generateEmpty = (prefix,count)=>Array.from({length:count},(_,i)=>({
+      id:`${prefix}${i+1}`,name:`Nombre ${i+1}`,price:`$0`,img:''
+    }));
+
+    let data = JSON.parse(localStorage.getItem(storageKey) || JSON.stringify({
+      men:generateEmpty('m',15),
+      women:generateEmpty('w',15),
+      sports:generateEmpty('s',15)
+    }));
+
+    function renderGrid(section){
+      const arr=data[section];const grid=grids[section];grid.innerHTML='';
+      arr.forEach(item=>{
+        const card=document.createElement('article');card.className='card';card.dataset.id=item.id;
+        card.innerHTML=`<div class="thumb">${item.img?`<img src="${item.img}">`:'<div class="muted">Sin imagen</div>'}</div>
+        <div class="meta"><div class="name" data-field="name">${item.name}</div>
+        <div class="price" data-field="price">${item.price}</div></div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    function renderAll(){renderGrid('men');renderGrid('women');renderGrid('sports');}
+    renderAll();
+
+    document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+      document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.catalog-section').forEach(s=>s.style.display='none');
+      document.getElementById('section-'+b.dataset.section).style.display='block';
+    });
+
+    document.getElementById('toggleEdit').onclick=()=>{
+      document.body.classList.toggle('editing');
+      document.querySelectorAll('[data-field]').forEach(e=>e.contentEditable=document.body.classList.contains('editing'));
+    };
+
+    document.getElementById('saveAll').onclick=()=>{
+      ['men','women','sports'].forEach(sec=>{
+        data[sec].forEach((it,i)=>{
+          const el=grids[sec].children[i];
+          it.name=el.querySelector('[data-field="name"]').innerText;
+          it.price=el.querySelector('[data-field="price"]').innerText;
+        });
+      });
+      localStorage.setItem(storageKey,JSON.stringify(data));
+      alert('✅ Catálogo guardado en tu navegador');
+    };
+  </script>
+</body>
+</html>
